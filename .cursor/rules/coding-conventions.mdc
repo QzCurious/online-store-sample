@@ -3,5 +3,8 @@ description: coding conventions
 globs: 
 ---
 - It's a react-router project with @react-router/fs-routes, all url should be defined using directory name and actual file for the page should be route.tsx in that directory.
+    - For exmaple, app/routes/admin.products._index/route.tsx instead of app/routes/admin.products._index.tsx
 - Prefer defining components, functions, utils withing same file that using it if those are not mean to be shared in other places. Secondly, place those in the same directory.
 - Prefer putting related resources like scss, images in the same directory of a page.
+- Don't import from @remix-run/react or react-router-dom, I'm using react-router@7.1.5
+
