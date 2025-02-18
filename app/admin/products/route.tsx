@@ -1,6 +1,17 @@
-import { Link, useSearchParams } from "react-router";
-import type { Product } from "./types";
+import { and, asc, between, desc, eq, like, sql } from "drizzle-orm";
+import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import { Link, useLoaderData, useSearchParams } from "react-router";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { Slider } from "~/components/ui/slider";
 import {
   Table,
   TableBody,
@@ -9,21 +20,9 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import { Input } from "~/components/ui/input";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
-import {
-  Slider
-} from "~/components/ui/slider";
-import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
-import { Badge } from "~/components/ui/badge";
+import { db, products } from "~/db";
 
-type SortField = "name" | "price" | "stock";
+type SortField = "name" | "price" | "stockQuantity";
 type SortOrder = "asc" | "desc";
 
 // Move to a separate types file if needed by other components
@@ -37,18 +36,102 @@ interface PriceRange {
   max: number;
 }
 
-function SortButton({ field, children }: { field: SortField, children: React.ReactNode }) {
+interface LoaderData {
+  products: Array<typeof products.$inferSelect>;
+  categories: Category[];
+  totalItems: number;
+  itemsPerPage: number;
+}
+
+// Loader function to fetch products with filters
+export async function loader({ request }: { request: Request }) {
+  try {
+    const url = new URL(request.url);
+    const search = url.searchParams.get("search") || "";
+    const sortField = (url.searchParams.get("sort") as SortField) || "name";
+    const sortOrder = (url.searchParams.get("order") as SortOrder) || "asc";
+    const currentPage = Number(url.searchParams.get("page")) || 1;
+    const selectedCategory = url.searchParams.get("category") || "";
+    const minPrice = Number(url.searchParams.get("minPrice")) || 0;
+    const maxPrice = Number(url.searchParams.get("maxPrice")) || 1000;
+    const itemsPerPage = 10;
+
+    // Build where conditions
+    const whereConditions = [];
+
+    if (search) {
+      whereConditions.push(like(products.name, `%${search}%`));
+    }
+
+    if (selectedCategory) {
+      whereConditions.push(eq(products.category, selectedCategory));
+    }
+
+    whereConditions.push(between(products.price, minPrice, maxPrice));
+
+    // Get total count for pagination
+    const [{ count }] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(products)
+      .where(and(...whereConditions));
+
+    // Get products with pagination and sorting
+    const productsList = await db
+      .select()
+      .from(products)
+      .where(and(...whereConditions))
+      .orderBy(
+        sortOrder === "asc" ? asc(products[sortField]) : desc(products[sortField])
+      )
+      .limit(itemsPerPage)
+      .offset((currentPage - 1) * itemsPerPage);
+
+    // Get unique categories
+    const categories = await db
+      .select({
+        id: products.category,
+        name: products.category,
+      })
+      .from(products)
+      .where(sql`${products.category} IS NOT NULL`)
+      .groupBy(products.category)
+      .then((cats) =>
+        cats
+          .filter((cat) => cat.id !== null)
+          .map((cat) => ({
+            id: cat.id || "",
+            name: cat.name || "",
+          }))
+      );
+
+    return {
+      products: productsList,
+      categories,
+      totalItems: count,
+      itemsPerPage,
+    };
+  } catch (error) {
+    console.error("Error loading products:", error);
+    throw new Error("Error loading products");
+  }
+}
+
+function SortButton({
+  field,
+  children,
+}: {
+  field: SortField;
+  children: React.ReactNode;
+}) {
   const [searchParams, setSearchParams] = useSearchParams();
   const sortField = (searchParams.get("sort") as SortField) || "name";
   const sortOrder = (searchParams.get("order") as SortOrder) || "asc";
   const isActive = sortField === field;
 
   const handleSort = () => {
-    const newOrder = 
-      field === sortField 
-        ? sortOrder === "asc" ? "desc" : "asc"
-        : "asc";
-    
+    const newOrder =
+      field === sortField ? (sortOrder === "asc" ? "desc" : "asc") : "asc";
+
     setSearchParams((prev) => {
       prev.set("sort", field);
       prev.set("order", newOrder);
@@ -108,6 +191,13 @@ function PriceRangeFilter() {
 }
 
 export default function ProductsList() {
+  const {
+    products: productsList,
+    categories,
+    totalItems,
+    itemsPerPage,
+  } = useLoaderData<LoaderData>();
+
   const [searchParams, setSearchParams] = useSearchParams();
   const search = searchParams.get("search") || "";
   const sortField = (searchParams.get("sort") as SortField) || "name";
@@ -117,39 +207,19 @@ export default function ProductsList() {
   const minPrice = Number(searchParams.get("minPrice")) || 0;
   const maxPrice = Number(searchParams.get("maxPrice")) || 1000;
 
-  // TODO: Replace with actual data fetching
-  const products: Product[] = [];
-  const categories: Category[] = [];
-  const itemsPerPage = 10;
-  const totalItems = products.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
-  const filteredProducts = products.filter((product) => {
-    const matchesSearch = 
-      product.name.toLowerCase().includes(search.toLowerCase()) ||
-      product.description.toLowerCase().includes(search.toLowerCase());
-    
-    const matchesCategory = 
-      !selectedCategory || product.categoryId === selectedCategory;
-    
-    const matchesPrice = 
-      product.price >= minPrice && product.price <= maxPrice;
-
-    return matchesSearch && matchesCategory && matchesPrice;
-  });
-
-  const sortedProducts = [...filteredProducts].sort((a, b) => {
-    const modifier = sortOrder === "asc" ? 1 : -1;
-    if (sortField === "name") {
-      return a.name.localeCompare(b.name) * modifier;
-    }
-    return ((a[sortField] as number) - (b[sortField] as number)) * modifier;
-  });
-
-  const paginatedProducts = sortedProducts.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  const handleSearch = (value: string) => {
+    setSearchParams((prev) => {
+      if (value) {
+        prev.set("search", value);
+      } else {
+        prev.delete("search");
+      }
+      prev.set("page", "1"); // Reset to first page
+      return prev;
+    });
+  };
 
   const handlePageChange = (page: number) => {
     setSearchParams((prev) => {
@@ -225,21 +295,25 @@ export default function ProductsList() {
                     <SortButton field="price">Price</SortButton>
                   </TableHead>
                   <TableHead>
-                    <SortButton field="stock">Stock</SortButton>
+                    <SortButton field="stockQuantity">Stock</SortButton>
                   </TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedProducts.map((product) => (
+                {productsList.map((product: typeof products.$inferSelect) => (
                   <TableRow key={product.id}>
                     <TableCell>{product.name}</TableCell>
                     <TableCell>${product.price}</TableCell>
-                    <TableCell>{product.stock}</TableCell>
+                    <TableCell>{product.stockQuantity}</TableCell>
                     <TableCell>
-                      <Badge variant={product.isActive ? "default" : "secondary"}>
-                        {product.isActive ? "Active" : "Inactive"}
+                      <Badge
+                        variant={
+                          product.status === "active" ? "default" : "secondary"
+                        }
+                      >
+                        {product.status === "active" ? "Active" : "Inactive"}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -249,10 +323,12 @@ export default function ProductsList() {
                             Edit
                           </Button>
                         </Link>
-                        <Button 
-                          variant="destructive" 
+                        <Button
+                          variant="destructive"
                           size="sm"
-                          onClick={() => {/* TODO: Implement delete */}}
+                          onClick={() => {
+                            /* TODO: Implement delete */
+                          }}
                         >
                           Delete
                         </Button>
@@ -281,4 +357,4 @@ export default function ProductsList() {
       </div>
     </div>
   );
-} 
+}

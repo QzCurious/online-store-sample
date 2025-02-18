@@ -1,10 +1,15 @@
 ---
-description: coding conventions
+description: How code should be write conventionally
 globs: 
 ---
 - It's a react-router project with @react-router/fs-routes, all url should be defined using directory name and actual file for the page should be route.tsx in that directory.
     - For exmaple, app/routes/admin.products._index/route.tsx instead of app/routes/admin.products._index.tsx
+- default export of a route.tsx should be named PageComponent
 - Prefer defining components, functions, utils withing same file that using it if those are not mean to be shared in other places. Secondly, place those in the same directory.
 - Prefer putting related resources like scss, images in the same directory of a page.
 - Don't import from @remix-run/react or react-router-dom, I'm using react-router@7.1.5
-
+- Prefer inline function definitions directly in component props when the function is only used once, rather than defining separate functions and passing them as references
+- Always refer to package.json for what tech is used and how packages should be imported.
+- Prefer not to use Barrel File and not to re-export with *.
+- All url should be absolute path if applicable
+- Better not use `useEffect`, if an action should be called, call it while the related event is running.

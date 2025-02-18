@@ -1,0 +1,11 @@
+---
+description: what tech and libraries are used
+globs: 
+---
+- If yout know any library that suitable for the functionality, please recommand it first
+- react-router@7.1.5 framework mode, docs on https://reactrouter.com/home.
+- shadcn@latest, docs on https://ui.shadcn.com/docs
+- react-hook-form@7.54.2, @hookform/resolvers with zod
+- zod@3.24.2
+- Use pnpm as package manager
+-  remix-utils@8.1.0
