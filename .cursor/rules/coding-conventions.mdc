@@ -1,0 +1,7 @@
+---
+description: coding conventions
+globs: 
+---
+- It's a react-router project with @react-router/fs-routes, all url should be defined using directory name and actual file for the page should be route.tsx in that directory.
+- Prefer defining components, functions, utils withing same file that using it if those are not mean to be shared in other places. Secondly, place those in the same directory.
+- Prefer putting related resources like scss, images in the same directory of a page.

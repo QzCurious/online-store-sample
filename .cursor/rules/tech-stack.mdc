@@ -1,0 +1,6 @@
+---
+description: tech stack
+globs: 
+---
+- react-router@7.1.5 framework mode, docs on https://reactrouter.com/home
+- shadcn@latest, docs on https://ui.shadcn.com/docs
