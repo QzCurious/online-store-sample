@@ -1,0 +1,26 @@
+---
+description: Apply these rules when working with routing, creating new routes, or modifying existing route files in the React Router project.
+globs: 
+---
+# Routing Rules
+
+## Directory Structure
+- All routes must use directory-based routing with @react-router/fs-routes
+- Route files must be named `route.tsx` within their respective directories
+- Example structure:
+  ✅ app/routes/admin.products._index/route.tsx
+  ❌ app/routes/admin.products._index.tsx
+
+## Component Naming
+- Default export in route files must be named `PageComponent`
+- Example:
+  ```tsx
+  export default function PageComponent() {
+    return <div>Page Content</div>
+  }
+  ```
+
+## URL Handling
+- All URLs must use absolute paths when applicable
+- Use react-router@7.1.5 framework mode (docs: https://reactrouter.com/home)
+- Don't import from @remix-run/react or react-router-dom

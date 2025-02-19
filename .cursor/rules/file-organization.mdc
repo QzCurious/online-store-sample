@@ -1,0 +1,34 @@
+---
+description: Apply these rules when creating new files, organizing components, or structuring project resources and assets.
+globs: 
+---
+# File and Resource Organization
+
+## Resource Co-location
+- Keep related resources in the same directory:
+  - Component-specific styles (.scss files)
+  - Images and other assets
+  - Utils and helpers
+  - Tests
+- Prefer defining components, functions, utils within same file that using it if those are not meant to be shared
+- If shared, place them in the same directory
+
+## Directory Structure Example
+
+app/routes/admin.products.index/
+├── route.tsx # Main page component
+├── ProductList.tsx # Page-specific component
+├── styles.scss # Styles
+├── utils.ts # Utils
+└── assets/ # Images and other assets
+
+## Import Rules
+- Avoid barrel files (index.ts for re-exports)
+- Don't use export * from '...'
+- Use absolute imports when applicable
+- Always refer to package.json for what tech is used and how packages should be imported
+
+## Component Organization
+1. First priority: Define components in the same file if they're only used there
+2. Second priority: Place in same directory if shared locally
+3. Last resort: Move to shared/common components if widely used

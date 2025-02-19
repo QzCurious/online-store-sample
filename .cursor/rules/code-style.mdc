@@ -1,0 +1,28 @@
+---
+description: Apply these rules when writing React components, functions, and handling events. Use these guidelines for code organization and best practices.
+globs: 
+---
+# Code Style Rules
+
+## Function Definitions
+- Prefer inline function definitions in component props when used only once
+  ✅ <button onClick={() => handleClick()}>
+  ❌ const handleClick = () => {}; ... <button onClick={handleClick}>
+
+## Effects and Actions
+- Avoid using `useEffect`
+- If an action should be called, call it while the related event is running
+- Example:
+  ✅ <button onClick={() => fetchData()}>
+  ❌ useEffect(() => { fetchData() }, [])
+
+## Form Handling
+- Use react-hook-form@7.54.2 with @hookform/resolvers
+- Use zod@3.24.2 for form validation
+
+## Component Organization
+- Define components within the same file if they're not shared
+- Place shared components in the same directory as their primary usage
+
+## Library Usage
+- Before implementing any functionality, check and recommend suitable libraries first
