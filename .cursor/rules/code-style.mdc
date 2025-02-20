@@ -9,13 +9,6 @@ globs:
   ✅ <button onClick={() => handleClick()}>
   ❌ const handleClick = () => {}; ... <button onClick={handleClick}>
 
-## Effects and Actions
-- Avoid using `useEffect`
-- If an action should be called, call it while the related event is running
-- Example:
-  ✅ <button onClick={() => fetchData()}>
-  ❌ useEffect(() => { fetchData() }, [])
-
 ## Form Handling
 - Use react-hook-form@7.54.2 with @hookform/resolvers
 - Use zod@3.24.2 for form validation
@@ -26,3 +19,67 @@ globs:
 
 ## Library Usage
 - Before implementing any functionality, check and recommend suitable libraries first
+
+## Effect Usage Guidelines
+Before reaching for `useEffect`, consider if you really need it. Most effects can be replaced with simpler alternatives:
+
+### You Probably Don't Need Effects For:
+1. Transform data for rendering:
+  ✅ const fullName = `${firstName} ${lastName}`
+  ❌ useEffect(() => setFullName(`${firstName} ${lastName}`), [firstName, lastName])
+
+2. Handle user events:
+  ✅ <button onClick={() => handlePurchase()}>Buy</button>
+  ❌ useEffect(() => { handlePurchase() }, [])
+
+3. Reset state on prop change:
+  ✅ <Dialog key={selectedId}> {/* Use key to reset */}
+  ❌ useEffect(() => { reset() }, [selectedId])
+
+4. Fetch data:
+  ✅ Use react-router's loader, react-query, or SWR
+  ❌ useEffect(() => { fetch(url) }, [url])
+
+5. Chain state updates:
+  ✅ Update all related state in the event handler
+  ❌ useEffect(() => { setOtherState(state) }, [state])
+
+6. Initialize application:
+  ✅ Initialize directly in component or use a router loader
+  ❌ useEffect(() => { initialize() }, [])
+
+7. Subscribe to external store:
+  ✅ Use useSyncExternalStore hook
+  ❌ useEffect(() => { subscribe() }, [])
+
+8. Compute derived state:
+  ✅ Calculate during rendering
+  ❌ useEffect(() => { setComputedValue(props.value * 2) }, [props.value])
+
+### When Effects ARE Appropriate:
+1. Synchronizing with external systems (non-React state)
+2. Managing browser APIs (document.title, media players)
+3. Setting up third-party widgets/libraries
+4. Managing WebSocket connections
+5. Managing browser event listeners (when they affect the entire app)
+
+### Better Alternatives to Effects:
+1. For data fetching:
+   - Use react-router loaders
+   - Use react-query or SWR
+   - Consider server components if available
+
+2. For state management:
+   - Lift state up when needed
+   - Use context for global state
+   - Consider Zustand or Jotai for complex state
+
+3. For subscriptions:
+   - Use useSyncExternalStore
+   - Consider reactive libraries
+
+4. For animations:
+   - Use CSS transitions when possible
+   - Consider Framer Motion or react-spring
+
+Remember: If you're using an Effect, add a comment explaining why it can't be replaced with a more direct solution.
