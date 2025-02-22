@@ -3,14 +3,26 @@ import { eq } from "drizzle-orm";
 import { useForm } from "react-hook-form";
 import { redirect, useLoaderData, useSubmit } from "react-router";
 import { z } from "zod";
+import Tiptap from "~/components/Tiptap";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { Textarea } from "~/components/ui/textarea";
 import { useToast } from "~/components/ui/toast-context";
-import { db, productImages, products } from "~/db";
+import { db, productImages, products, images } from "~/db";
+import { IMAGE_CONFIG } from "~/routes/api.upload/const";
 import type { Route } from "./+types/route";
+
+// Helper function to extract image IDs from HTML content
+function extractImageIds(html: string): number[] {
+  const matches = html.match(/src="([^"]+)"/g) || [];
+  return matches
+    .map(match => {
+      const url = match.slice(5, -1); // Remove src=" and "
+      return IMAGE_CONFIG.extractIdFromUrl(url);
+    })
+    .filter((id): id is number => id !== null);
+}
 
 const productSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -55,6 +67,26 @@ export async function action({ request, params }: Route.ActionArgs) {
     return { errors: result.error.flatten() };
   }
 
+  // If editing an existing product, get the old description to compare images
+  let oldImageIds: number[] = [];
+  if (productId !== "new") {
+    const [existingProduct] = await db
+      .select()
+      .from(products)
+      .where(eq(products.id, parseInt(productId)))
+      .limit(1);
+    
+    if (existingProduct) {
+      oldImageIds = extractImageIds(existingProduct.description ?? '');
+    }
+  }
+
+  // Get new image IDs from the updated description
+  const newImageIds = extractImageIds(result.data.description);
+
+  // Find images that were removed
+  const removedImageIds = oldImageIds.filter(id => !newImageIds.includes(id));
+
   const productData = {
     ...result.data,
     stockQuantity: result.data.stock,
@@ -71,6 +103,19 @@ export async function action({ request, params }: Route.ActionArgs) {
       .where(eq(products.id, parseInt(productId)));
   }
 
+  // Delete removed images from the database
+  if (removedImageIds.length > 0) {
+    await db
+      .delete(images)
+      .where(eq(images.id, removedImageIds[0]));
+    
+    for (const imageId of removedImageIds.slice(1)) {
+      await db
+        .delete(images)
+        .where(eq(images.id, imageId));
+    }
+  }
+
   return redirect("/admin/products");
 }
 
@@ -83,6 +128,7 @@ export default function ProductForm() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -101,16 +147,20 @@ export default function ProductForm() {
           <CardTitle>{isEditMode ? "Edit Product" : "New Product"}</CardTitle>
         </CardHeader>
         <CardContent>
-          <form 
-            className="space-y-4" 
+          <form
+            className="space-y-4"
             onSubmit={handleSubmit(async (data) => {
-              await submit(data, { 
+              await submit(data, {
                 method: "post",
-                encType: "application/json"
+                encType: "application/json",
               });
-              toast({ 
-                title: `Product ${isEditMode ? "updated" : "created"} successfully`,
-                description: `${data.name} has been ${isEditMode ? "updated" : "created"}.`
+              toast({
+                title: `Product ${
+                  isEditMode ? "updated" : "created"
+                } successfully`,
+                description: `${data.name} has been ${
+                  isEditMode ? "updated" : "created"
+                }.`,
               });
             })}
           >
@@ -129,10 +179,9 @@ export default function ProductForm() {
 
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                {...register("description")}
-                aria-invalid={!!errors.description}
+              <Tiptap
+                content={product?.description ?? ""}
+                onChange={(content) => setValue("description", content)}
               />
               {errors.description && (
                 <p className="text-sm text-red-500">
