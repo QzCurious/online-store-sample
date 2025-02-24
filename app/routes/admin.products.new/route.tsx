@@ -1,6 +1,5 @@
-import { Form } from "react-router";
-import ProductForm from "../admin.products.$id/route";
+import ProductForm from "../admin.products/ProductForm";
 
 export default function NewProduct() {
   return <ProductForm />;
-} 
+}

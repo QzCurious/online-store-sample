@@ -65,9 +65,6 @@ importers:
       drizzle-orm:
         specifier: ^0.39.3
         version: 0.39.3(@libsql/client@0.14.0)
-      errorgant:
-        specifier: link:../errorgant
-        version: link:../errorgant
       isbot:
         specifier: ^5.1.17
         version: 5.1.23
