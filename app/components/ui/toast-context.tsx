@@ -10,7 +10,11 @@ import {
 } from "~/components/ui/toast"
 
 interface ToastContextType {
-  toast: (props: { title: string; description?: string }) => void
+  toast: (props: {
+    title: string
+    description?: string
+    variant?: "default" | "destructive"
+  }) => void
 }
 
 const ToastContext = React.createContext<ToastContextType | undefined>(undefined)
@@ -24,12 +28,21 @@ export function ToastContextProvider({
     id: string
     title: string
     description?: string
+    variant?: "default" | "destructive"
   }>>([])
 
   const toast = React.useCallback(
-    ({ title, description }: { title: string; description?: string }) => {
+    ({
+      title,
+      description,
+      variant = "default",
+    }: {
+      title: string
+      description?: string
+      variant?: "default" | "destructive"
+    }) => {
       const id = Math.random().toString(36).substring(2)
-      setToasts((prev) => [...prev, { id, title, description }])
+      setToasts((prev) => [...prev, { id, title, description, variant }])
       setTimeout(() => {
         setToasts((prev) => prev.filter((t) => t.id !== id))
       }, 5000)
@@ -41,8 +54,8 @@ export function ToastContextProvider({
     <ToastContext.Provider value={{ toast }}>
       <ToastProvider>
         {children}
-        {toasts.map(({ id, title, description }) => (
-          <Toast key={id}>
+        {toasts.map(({ id, title, description, variant }) => (
+          <Toast key={id} variant={variant}>
             <div className="grid gap-1">
               <ToastTitle>{title}</ToastTitle>
               {description && <ToastDescription>{description}</ToastDescription>}

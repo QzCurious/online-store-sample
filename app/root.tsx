@@ -9,6 +9,8 @@ import {
 
 import type { Route } from "./+types/root";
 import { ToastContextProvider } from "~/components/ui/toast-context";
+import { CartProvider } from "~/contexts/CartContext";
+import { MainLayout } from "~/components/layout/MainLayout";
 import "./app.css";
 
 export const links: Route.LinksFunction = () => [
@@ -35,7 +37,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <ToastContextProvider>
-          {children}
+          <CartProvider>
+            <MainLayout>{children}</MainLayout>
+          </CartProvider>
         </ToastContextProvider>
         <ScrollRestoration />
         <Scripts />
