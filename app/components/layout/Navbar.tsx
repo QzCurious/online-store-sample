@@ -1,6 +1,8 @@
-import { Link } from "react-router"
-import { Button } from "~/components/ui/button"
-import { Input } from "~/components/ui/input"
+import { Coffee, Menu, ShoppingCart, User } from "lucide-react";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -9,34 +11,27 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
   navigationMenuTriggerStyle,
-} from "~/components/ui/navigation-menu"
-import { ShoppingCart, User, Coffee, Menu } from "lucide-react"
-import { useCart } from "~/contexts/CartContext"
-import { mockCategories } from "~/types/category"
-import { cn } from "~/lib/utils"
-import { useState } from "react"
-import { useNavigate } from "react-router"
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from "~/components/ui/sheet"
+} from "~/components/ui/navigation-menu";
+import { Sheet, SheetContent, SheetTrigger } from "~/components/ui/sheet";
+import { useCart } from "~/contexts/CartContext";
+import { cn } from "~/lib/utils";
+import { mockCategories } from "~/types/category";
 
 export function Navbar() {
-  const { items } = useCart()
-  const [searchQuery, setSearchQuery] = useState("")
-  const navigate = useNavigate()
+  const { items } = useCart();
+  const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
 
   const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`)
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
     }
-  }
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center gap-4">
+      <div className="container mx-auto flex h-16 items-center gap-4">
         {/* 手機版選單按鈕 */}
         <Sheet>
           <SheetTrigger asChild>
@@ -97,7 +92,9 @@ export function Navbar() {
                             "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
                           )}
                         >
-                          <div className="text-sm font-medium leading-none">{category.name}</div>
+                          <div className="text-sm font-medium leading-none">
+                            {category.name}
+                          </div>
                           <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
                             {category.description}
                           </p>
@@ -147,5 +144,5 @@ export function Navbar() {
         </div>
       </div>
     </header>
-  )
-} 
+  );
+}
